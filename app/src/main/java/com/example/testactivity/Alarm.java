@@ -1,49 +1,27 @@
 package com.example.testactivity;
 
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
-import android.app.AlertDialog;
-import android.app.Application;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
+import android.os.PowerManager;
 import android.os.SystemClock;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
-
-    private AlarmManager alarmMgr;
-    private PendingIntent alarmIntent;
-
+public class Alarm extends BroadcastReceiver {
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+    public void onReceive(Context context, Intent intent) {
 
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        @SuppressLint("InvalidWakeLockTag") PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "");
+        wl.acquire();
 
-//        IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-//        Intent batteryStatus = context.registerReceiver(null, ifilter);
-//
-//        // Are we charging / charged?
-//        int status = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
-//        boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-//                status == BatteryManager.BATTERY_STATUS_FULL;
-//
-//        // How are we charging?
-//        int chargePlug = batteryStatus.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
-//        boolean usbCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_USB;
-//        boolean acCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_AC;
-//
-//        int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-//        int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-//
-//        float batteryPct = level / (float)scale;
-
+        // Put here YOUR code.
         BroadcastReceiver batteryReceiver = new BroadcastReceiver() {
             int scale = -1;
             int level = -1;
@@ -74,24 +52,24 @@ public class MainActivity extends AppCompatActivity {
 //                    builder.setTitle("Attenzione!");
 //                    builder.setMessage("Operazione non valida!");
 //                    builder.show();
-                    alarmMgr = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-                    intent = new Intent(context, MainActivity.class);
-                    alarmIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
-
-                    alarmMgr.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                            SystemClock.elapsedRealtime() +
-                                    60 * 1000, alarmIntent);
-                } else if(level < 45){
+//                    alarmMgr = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+//                    intent = new Intent(context, MainActivity.class);
+//                    alarmIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
+//
+//                    alarmMgr.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+//                            SystemClock.elapsedRealtime() +
+//                                    60 * 1000, alarmIntent);
+                } else if (level < 45) {
                     Log.e("BatteryManager", "Livello della batteria non ottimale!");
                 } else {
                     Log.e("BatteryManager", "Non saprei dirti!");
-                    alarmMgr = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-                    intent = new Intent(context, MainActivity.class);
-                    alarmIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
-
-                    alarmMgr.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                            SystemClock.elapsedRealtime() +
-                                    60 * 1000, alarmIntent);
+//                    alarmMgr = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+//                    intent = new Intent(context, MainActivity.class);
+//                    alarmIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
+//
+//                    alarmMgr.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+//                            SystemClock.elapsedRealtime() +
+//                                    60 * 1000, alarmIntent);
                 }
 
                 if (usbCharge) {
@@ -104,8 +82,23 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         IntentFilter filter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-        registerReceiver(batteryReceiver, filter);
+//        registerReceiver(batteryReceiver, filter);
+        Toast.makeText(context, "Alarm !!!!!!!!!!", Toast.LENGTH_LONG).show(); // For example
 
+        wl.release();
     }
 
+    public void setAlarm(Context context) {
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        Intent i = new Intent(context, Alarm.class);
+        PendingIntent pi = PendingIntent.getBroadcast(context, 0, i, 0);
+        am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60 * 10, pi); // Millisec * Second * Minute
+    }
+
+    public void cancelAlarm(Context context) {
+        Intent intent = new Intent(context, Alarm.class);
+        PendingIntent sender = PendingIntent.getBroadcast(context, 0, intent, 0);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        alarmManager.cancel(sender);
+    }
 }
